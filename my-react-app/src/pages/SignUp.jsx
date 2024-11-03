@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import * as Yup from 'yup';
+import { useNavigate } from 'react-router-dom';
 import './SignUp.css';
 
 const SignUp = () => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         userId: '',
         password: '',
@@ -19,7 +21,6 @@ const SignUp = () => {
 
     const [errors, setErrors] = useState({});
 
-    // Yup validation schema
     const validationSchema = Yup.object().shape({
         name: Yup.string().matches(/^[A-Za-z\s]+$/, "Only letters allowed").required("Full Name is required"),
         email: Yup.string().email("Invalid email address").required("Email is required"),
@@ -41,15 +42,26 @@ const SignUp = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            // Validate form data
             await validationSchema.validate(formData, { abortEarly: false });
             setErrors({});
 
             // Show success alert
             window.alert(`Signup successful! Welcome, ${formData.name}`);
-
-            // Optional: Log the form data
             console.log("Form Submitted:", formData);
+
+            // Send data to Firebase
+            await fetch('https://midhackathone-default-rtdb.firebaseio.com/form.json', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: formData.name,
+                    email: formData.email,
+                    password: formData.password,
+                    confirmPassword: formData.confirmPassword,
+                }),
+            });
 
             // Clear form fields
             setFormData({
@@ -65,20 +77,28 @@ const SignUp = () => {
                 language: '',
                 about: '',
             });
+
+            // Navigate to home page
+            navigate('/home');
+
         } catch (validationErrors) {
-            // Set error messages
-            const errorMessages = validationErrors.inner.reduce((acc, error) => {
-                acc[error.path] = error.message;
-                return acc;
-            }, {});
-            setErrors(errorMessages);
+            if (validationErrors.inner) {
+                const errorMessages = validationErrors.inner.reduce((acc, error) => {
+                    acc[error.path] = error.message;
+                    return acc;
+                }, {});
+                setErrors(errorMessages);
+            } else {
+                console.error(validationErrors);
+            }
         }
     };
 
     return (
         <div className="signup-page">
-            <h2>Sign Up</h2>
+            <h2>SignUp</h2>
             <form onSubmit={handleSubmit} className="signup-form">
+                {/* Full Name Field */}
                 <div className="form-group">
                     <label>Full Name</label>
                     <input
@@ -92,6 +112,7 @@ const SignUp = () => {
                     {errors.name && <div className="error-message">{errors.name}</div>}
                 </div>
 
+                {/* Email Field */}
                 <div className="form-group">
                     <label>Email</label>
                     <input
@@ -105,6 +126,7 @@ const SignUp = () => {
                     {errors.email && <div className="error-message">{errors.email}</div>}
                 </div>
 
+                {/* Password Field */}
                 <div className="form-group">
                     <label>Password</label>
                     <input
@@ -118,6 +140,7 @@ const SignUp = () => {
                     {errors.password && <div className="error-message">{errors.password}</div>}
                 </div>
 
+                {/* Confirm Password Field */}
                 <div className="form-group">
                     <label>Confirm Password</label>
                     <input
@@ -131,6 +154,7 @@ const SignUp = () => {
                     {errors.confirmPassword && <div className="error-message">{errors.confirmPassword}</div>}
                 </div>
 
+                {/* Gender Field */}
                 <div className="form-group">
                     <label>Gender</label>
                     <div className="radio-group">
@@ -158,7 +182,7 @@ const SignUp = () => {
                     {errors.gender && <div className="error-message">{errors.gender}</div>}
                 </div>
 
-                <button type="submit" className="submit-button">Sign Up</button>
+                <button type="submit" className="submit-button">SignUp</button>
             </form>
         </div>
     );
